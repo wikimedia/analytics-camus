@@ -81,7 +81,7 @@
 				<version>2.0.0-cdh4.2.0</version>
 			</dependency>
 			<dependency>
-				<groupId>kafka</groupId>
+				<groupId>org.apache.kafka</groupId>
 				<artifactId>kafka</artifactId>
 				<version>0.8-SNAPSHOT</version>
 			</dependency>
@@ -174,7 +174,7 @@
 							<goal>install-file</goal>
 						</goals>
 						<configuration>
-							<groupId>kafka</groupId>
+							<groupId>org.apache.kafka</groupId>
 							<artifactId>kafka</artifactId>
 							<version>0.8-SNAPSHOT</version>
 							<packaging>jar</packaging>

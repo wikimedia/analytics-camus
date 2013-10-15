@@ -37,7 +37,7 @@
 			<artifactId>hadoop-common</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>kafka</groupId>
+			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka</artifactId>
 		</dependency>
 		<dependency>
