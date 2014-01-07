@@ -133,22 +133,25 @@ public class CamusJob extends Configured implements Tool {
 		
 		Job job = new Job(getConf());
 		job.setJarByClass(CamusJob.class);
-		job.setJobName("Camus Job");
-		if(job.getConfiguration().get("camus.job.name") != null)
-		{
-			job.setJobName(job.getConfiguration().get("camus.job.name"));
-		}
+		
 
 		// Set the default partitioner
 		job.getConfiguration().set(
 				EtlMultiOutputFormat.ETL_DEFAULT_PARTITIONER_CLASS,
 				"com.linkedin.camus.etl.kafka.coders.DefaultPartitioner");
 
-//		for (Object key : props.keySet()) {
-//			job.getConfiguration().set(key.toString(),
-//					props.getProperty(key.toString()));
-//		}
-
+		for (Object key : props.keySet()) {
+			job.getConfiguration().set(key.toString(),
+					props.getProperty(key.toString()));
+		}
+			
+		job.setJobName("Camus Job");
+		if(job.getConfiguration().get("camus.job.name") != null)
+		{
+			job.setJobName(job.getConfiguration().get("camus.job.name"));
+		}
+		
+		
 		FileSystem fs = FileSystem.get(job.getConfiguration());
 
 		String hadoopCacheJarDir = job.getConfiguration().get(
@@ -581,8 +584,8 @@ public class CamusJob extends Configured implements Tool {
 		}
 
 		if (cmd.hasOption('p'))
-			props.load(ClassLoader.getSystemClassLoader().getResourceAsStream(
-					cmd.getOptionValue('p')));
+		    props.load(this.getClass().getClassLoader().getResourceAsStream(
+                    cmd.getOptionValue('p')));
 
 		if (cmd.hasOption('P')) {
 			File file = new File(cmd.getOptionValue('P'));
