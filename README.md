@@ -10,6 +10,29 @@ It is used at LinkedIn where it processes tens of billions of messages per day.
 This is a new open source project, so we don't yet have detailed documentation available and there are still a few LinkedIn-specific items we haven't fixed yet. For early adopters, you can get a basic overview from this [Building LinkedIn’s Real-time Activity Data Pipeline](http://sites.computer.org/debull/A12june/pipeline.pdf "Building LinkedIn’s Real-time Activity Data Pipeline"). There is also a google group for discussion that you can email at camus_etl@googlegroups.com, <camus_etl@googlegroups.com> or you can search the [archives](https://groups.google.com/forum/#!forum/camus_etl "Camus Archives"). If you are interested please ask any questions on that mailing list.
 
 For a more detailed documentation on the main Camus components, please see [Camus InputFormat and OutputFormat Behavior](https://github.com/linkedin/camus/wiki/Camus-InputFormat-and-OutputFormat-Behavior "Camus InputFormat and OutputFormat Behavior")
+
+## Wikimedia Fork & Branches
+Wikimedia uses Camus, but we use different versions of Hadoop and
+Kafka than LinkedIn. Wikimedia maintains 2 branches in our Camus repository.
+
+The wmf branch tracks either wikimedia or master, but has modifications
+that will not be upstreamed to LinkedIn.  Notably, Wikimedia uses
+Cloudera's Hadoop and Kafka from Maven Central.  We also use this
+branch to roll Camus builds versioned with 'wmf' in the name.
+
+The wikimedia branch is meant to track LinkedIn's master, and is used
+to submit Github pull requests to LinkedIn.  It should only be out of sync
+with LinkedIn's master if there is an outstanding pull request.
+
+Wikimedia primarily uses Gerrit, not Github, and replicates Gerrit hosted
+repositories to Github.  Since Github cannot track forks of replicated
+repositories (they are pushed directly to Github), they cannot be used
+to submit pull requests.  Wikimedia maintains a manual Github repository
+at https://github.com/wikimedia/camus from which pull requests are sent.
+the 'wmf' branch which is used for building Camus for Wikimedia is
+only present in Gerrit and its replicated Github repository at
+https://github.com/wikimedia/analytics-camus.
+
 # Brief Overview
 All work is done within a single Hadoop job divided into three stages:
 
