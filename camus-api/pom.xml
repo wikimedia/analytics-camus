@@ -5,7 +5,7 @@
   <parent>
     <groupId>com.linkedin.camus</groupId>
     <artifactId>camus-parent</artifactId>
-    <version>0.1.0-SNAPSHOT-wmf-1</version>
+    <version>0.1.0-SNAPSHOT-wmf-2</version>
   </parent>
 
   <artifactId>camus-api</artifactId>
