@@ -1,0 +1,55 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.linkedin.camus</groupId>
+    <artifactId>camus-parent</artifactId>
+    <version>0.1.0-wmf3-SNAPSHOT</version>
+  </parent>
+
+  <groupId>org.wikimedia.analytics</groupId>
+  <artifactId>camus-wmf</artifactId>
+  <version>0.1.0-wmf3-SNAPSHOT</version>
+  <name>Camus Wikimedia</name>
+  <description>
+    This subproject exists to build a shaded jar
+    that is usesable on Wikimedia's Analytics cluster.
+    It depends only on what is needed from other
+    Camus subprojects to generate a shaded jar.
+  </description>
+  <packaging>jar</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.linkedin.camus</groupId>
+      <artifactId>camus-etl-kafka</artifactId>
+      <version>0.1.0-wmf3-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.0</version>
+        <configuration>
+          <shadedArtifactAttached>false</shadedArtifactAttached>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+	          <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
