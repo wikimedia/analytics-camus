@@ -11,7 +11,7 @@
 	<artifactId>camus-parent</artifactId>
   <!-- If you want to change version, you must do so
        here as well in all sub poms. -->
-	<version>0.1.0-wmf3-SNAPSHOT</version>
+	<version>0.1.0-wmf3</version>
 	<packaging>pom</packaging>
 	<name>Camus Parent</name>
 	<description>
