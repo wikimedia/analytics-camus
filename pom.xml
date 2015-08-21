@@ -9,7 +9,7 @@
 
   <groupId>com.linkedin.camus</groupId>
   <artifactId>camus-parent</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.1.0-wmf6</version>
   <packaging>pom</packaging>
   <name>Camus Parent</name>
   <description>
@@ -26,27 +26,27 @@
       <dependency>
         <groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-api</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>0.1.0-wmf6</version>
       </dependency>
       <dependency>
 	<groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-etl-kafka</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>0.1.0-wmf6</version>
       </dependency>
       <dependency>
 	<groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-kafka-coders</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>0.1.0-wmf6</version>
       </dependency>
       <dependency>
 	<groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-schema-registry</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>0.1.0-wmf6</version>
       </dependency>
       <dependency>
 	<groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-schema-registry</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>0.1.0-wmf6</version>
 	<type>test-jar</type>
 	<scope>test</scope>
       </dependency>
@@ -78,17 +78,17 @@
       <dependency>
 	<groupId>org.apache.hadoop</groupId>
 	<artifactId>hadoop-mapreduce-client-core</artifactId>
-	<version>2.3.0</version>
+	<version>2.6.0-cdh5.4.0</version>
       </dependency>
       <dependency>
 	<groupId>org.apache.hadoop</groupId>
 	<artifactId>hadoop-mapreduce-client-common</artifactId>
-	<version>2.3.0</version>
+	<version>2.6.0-cdh5.4.0</version>
       </dependency>
       <dependency>
 	<groupId>org.apache.hadoop</groupId>
 	<artifactId>hadoop-common</artifactId>
-	<version>2.3.0</version>
+	<version>2.6.0-cdh5.4.0</version>
       </dependency>
       <dependency>
 	<groupId>org.easymock</groupId>
@@ -166,6 +166,7 @@
     <module>camus-schema-registry-avro</module>
     <module>camus-example</module>
     <module>camus-sweeper</module>
+    <module>camus-wmf</module>
   </modules>
 
   <licenses>
@@ -189,8 +190,19 @@
 
   <repositories>
     <repository>
-      <id>apache-releases</id>
-        <url>https://repository.apache.org/content/groups/public</url>
+      <id>central</id>
+      <url>http://repo1.maven.org/maven2</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+
+    <repository>
+      <id>wikimedia.mirrored</id>
+      <url>http://archiva.wikimedia.org/repository/mirrored/</url>
     </repository>
   </repositories>
 
@@ -253,4 +265,5 @@
       </plugin>
     </plugins>
   </build>
+
 </project>
