@@ -9,7 +9,7 @@
 
   <groupId>com.linkedin.camus</groupId>
   <artifactId>camus-parent</artifactId>
-  <version>0.1.0-wmf6</version>
+  <version>0.1.0-wmf6-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Camus Parent</name>
   <description>
@@ -26,27 +26,27 @@
       <dependency>
         <groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-api</artifactId>
-	<version>0.1.0-wmf6</version>
+	<version>0.1.0-wmf6-SNAPSHOT</version>
       </dependency>
       <dependency>
 	<groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-etl-kafka</artifactId>
-	<version>0.1.0-wmf6</version>
+	<version>0.1.0-wmf6-SNAPSHOT</version>
       </dependency>
       <dependency>
 	<groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-kafka-coders</artifactId>
-	<version>0.1.0-wmf6</version>
+	<version>0.1.0-wmf6-SNAPSHOT</version>
       </dependency>
       <dependency>
 	<groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-schema-registry</artifactId>
-	<version>0.1.0-wmf6</version>
+	<version>0.1.0-wmf6-SNAPSHOT</version>
       </dependency>
       <dependency>
 	<groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-schema-registry</artifactId>
-	<version>0.1.0-wmf6</version>
+	<version>0.1.0-wmf6-SNAPSHOT</version>
 	<type>test-jar</type>
 	<scope>test</scope>
       </dependency>
@@ -178,10 +178,24 @@
   </licenses>
 
   <scm>
-    <connection>scm:git:git://github.com/linkedin/camus.git</connection>
-    <developerConnection>scm:git:git@github.com:linkedin/camus.git</developerConnection>
-    <url>http://github.com/linkedin/camus/</url>
+    <url>scm:git:https://gerrit.wikimedia.org/r/p/analytics/refinery/source</url>
+    <connection>scm:git:https://gerrit.wikimedia.org/r/p/analytics/refinery/source</connection>
+    <developerConnection>scm:git:ssh://${user.name}@gerrit.wikimedia.org:29418/analytics/refinery/source</developerConnection>
+    <tag>HEAD</tag>
   </scm>
+
+  <distributionManagement>
+    <repository>
+      <id>archiva.releases</id>
+      <name>Internal Release Repository</name>
+      <url>https://archiva.wikimedia.org/repository/releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>archiva.snapshots</id>
+      <name>Internal Snapshot Repository</name>
+      <url>https://archiva.wikimedia.org/repository/snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
 
   <issueManagement>
     <system>github</system>
@@ -263,6 +277,17 @@
 	  </compilerArgs>
 	</configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.5.1</version>
+        <configuration>
+          <tagNameFormat>v@{project.version}</tagNameFormat>
+          <autoVersionSubmodules>true</autoVersionSubmodules>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 

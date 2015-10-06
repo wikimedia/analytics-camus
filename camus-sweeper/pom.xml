@@ -4,12 +4,12 @@
 	<groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-sweeper</artifactId>
 	<name>Camus compaction code small files produced Camus</name>
-	<version>0.1.0-wmf6</version>
+	<version>0.1.0-wmf6-SNAPSHOT</version>
 
 	<parent>
 		<groupId>com.linkedin.camus</groupId>
 		<artifactId>camus-parent</artifactId>
-		<version>0.1.0-wmf6</version>
+		<version>0.1.0-wmf6-SNAPSHOT</version>
 	</parent>
 
 	<dependencies>
