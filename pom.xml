@@ -178,9 +178,9 @@
   </licenses>
 
   <scm>
-    <url>scm:git:https://gerrit.wikimedia.org/r/p/analytics/refinery/source</url>
-    <connection>scm:git:https://gerrit.wikimedia.org/r/p/analytics/refinery/source</connection>
-    <developerConnection>scm:git:ssh://${user.name}@gerrit.wikimedia.org:29418/analytics/refinery/source</developerConnection>
+    <url>scm:git:https://gerrit.wikimedia.org/r/p/analytics/camus</url>
+    <connection>scm:git:https://gerrit.wikimedia.org/r/p/analytics/camus</connection>
+    <developerConnection>scm:git:ssh://${user.name}@gerrit.wikimedia.org:29418/analytics/camus</developerConnection>
     <tag>HEAD</tag>
   </scm>
 
