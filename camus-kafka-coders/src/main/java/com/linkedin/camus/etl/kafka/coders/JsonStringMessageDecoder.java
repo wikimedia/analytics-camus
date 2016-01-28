@@ -2,6 +2,7 @@ package com.linkedin.camus.etl.kafka.coders;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import com.linkedin.camus.coders.CamusWrapper;
 import com.linkedin.camus.coders.Message;
 import com.linkedin.camus.coders.MessageDecoder;
@@ -80,24 +81,27 @@ public class JsonStringMessageDecoder extends MessageDecoder<Message, String> {
       throw new RuntimeException(e);
     }
 
+    // Find the timestampField value in the jsonObject
+    JsonPrimitive timestampPrimitive = extractJsonPrimitive(jsonObject, timestampField);
+
     // Attempt to read and parse the timestamp element into a long.
-    if (jsonObject.has(timestampField)) {
+    if (timestampPrimitive != null) {
       // If timestampFormat is 'unix_seconds',
       // then the timestamp only needs converted to milliseconds.
       // Also support 'unix' for backwards compatibility.
       if (timestampFormat.equals("unix_seconds") || timestampFormat.equals("unix")) {
-        timestamp = jsonObject.get(timestampField).getAsLong();
+        timestamp = timestampPrimitive.getAsLong();
         // This timestamp is in seconds, convert it to milliseconds.
         timestamp = timestamp * 1000L;
       }
       // Else if this timestamp is already in milliseconds,
       // just save it as is.
       else if (timestampFormat.equals("unix_milliseconds")) {
-        timestamp = jsonObject.get(timestampField).getAsLong();
+        timestamp = timestampPrimitive.getAsLong();
       }
       // Else if timestampFormat is 'ISO-8601', parse that
       else if (timestampFormat.equals("ISO-8601")) {
-        String timestampString = jsonObject.get(timestampField).getAsString();
+        String timestampString = timestampPrimitive.getAsString();
         try {
           timestamp = new DateTime(timestampString).getMillis();
         } catch (IllegalArgumentException e) {
@@ -106,7 +110,7 @@ public class JsonStringMessageDecoder extends MessageDecoder<Message, String> {
       }
       // Otherwise parse the timestamp as a string in timestampFormat.
       else {
-        String timestampString = jsonObject.get(timestampField).getAsString();
+        String timestampString = timestampPrimitive.getAsString();
         try {
           timestamp = dateTimeParser.parseDateTime(timestampString).getMillis();
         } catch (IllegalArgumentException e) {
@@ -130,5 +134,26 @@ public class JsonStringMessageDecoder extends MessageDecoder<Message, String> {
     }
 
     return new CamusWrapper<String>(payloadString, timestamp);
+  }
+
+  /**
+   * Searches jsonObject for the specified jsonPath.  If jsonPath contains dots ('.'),
+   * This will iterate through the json hierarchy to find the desired field.
+   *
+   * Example:
+   * Given JsonObject jsonObject from {"k1": 1, "obj": {"k2": 2}}
+   *   extractJsonPrimitive(jsonObject, "k1")     -> JsonPrimitive(1)
+   *   extractJsonPrimitive(jsonObject, "obj.k2") -> JsonPrimitive(2)
+   */
+  private static JsonPrimitive extractJsonPrimitive(JsonObject jsonObject, String jsonPath) {
+      // if the path has dots, assume the first element in the path is
+      // in jsonObject, and the following elements are in subobjects.
+      if (jsonPath.contains(".")) {
+        String[] paths = jsonPath.split("\\.", 2);
+        return extractJsonPrimitive(jsonObject.getAsJsonObject(paths[0]), paths[1]);
+      }
+      else {
+        return jsonObject.getAsJsonPrimitive(jsonPath);
+      }
   }
 }

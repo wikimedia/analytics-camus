@@ -77,6 +77,8 @@ public class TestJsonStringMessageDecoder {
 
   }
 
+
+
   @Test
   public void testDecodeWithIsoFormat() {
 
@@ -113,6 +115,30 @@ public class TestJsonStringMessageDecoder {
 
     JsonStringMessageDecoder testDecoder = new JsonStringMessageDecoder();
     testDecoder.decode(new TestMessage().setPayload(bytePayload));
+  }
+
+  @Test
+  public void testDecodeWithTimestampFieldInSubObject() {
+
+    // Test that we can specify a field in a subobject via a path, e.g
+    // "obj.ts" with a pattern and get back unix timestamp milliseconds.
+
+    String testFormat = "yyyy-MM-dd HH:mm:ss Z";
+    String testTimestamp = "2014-02-01 01:15:27 UTC";
+    String testTimestampField = "obj.ts";
+    long expectedTimestamp = 1391217327000L;
+
+    Properties testProperties = new Properties();
+    testProperties.setProperty("camus.message.timestamp.format", testFormat);
+    testProperties.setProperty("camus.message.timestamp.field", testTimestampField);
+    JsonStringMessageDecoder testDecoder = new JsonStringMessageDecoder();
+    testDecoder.init(testProperties, "testTopic");
+    String payload = "{\"obj\": {\"ts\": \"" + testTimestamp + "\"}, \"myData\": \"myValue\"}";
+    byte[] bytePayload = payload.getBytes();
+    CamusWrapper actualResult = testDecoder.decode(new TestMessage().setPayload(bytePayload));
+    long actualTimestamp = actualResult.getTimestamp();
+
+    assertEquals(expectedTimestamp, actualTimestamp);
   }
 
 }
