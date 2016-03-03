@@ -35,6 +35,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
   public static final String ETL_DESTINATION_PATH_TOPIC_SUBDIRECTORY = "etl.destination.path.topic.sub.dir";
   public static final String ETL_DESTINATION_PATH_TOPIC_SUBDIRFORMAT = "etl.destination.path.topic.sub.dirformat";
   public static final String ETL_DESTINATION_PATH_TOPIC_SUBDIRFORMAT_LOCALE = "etl.destination.path.topic.sub.dirformat.locale";
+  public static final String ETL_DESTINATION_OVERWRITE = "etl.destination.overwrite";
   public static final String ETL_RUN_MOVE_DATA = "etl.run.move.data";
   public static final String ETL_RUN_TRACKING_POST = "etl.run.tracking.post";
 
@@ -63,16 +64,23 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
   @Override
   public RecordWriter<EtlKey, Object> getRecordWriter(TaskAttemptContext context) throws IOException,
       InterruptedException {
-    if (committer == null)
-      committer = new EtlMultiOutputCommitter(getOutputPath(context), context, log);
+    initCommitter(context);
     return new EtlMultiOutputRecordWriter(context, committer);
   }
 
   @Override
   public synchronized OutputCommitter getOutputCommitter(TaskAttemptContext context) throws IOException {
-    if (committer == null)
-      committer = new EtlMultiOutputCommitter(getOutputPath(context), context, log);
+    initCommitter(context);
     return committer;
+  }
+
+  private void initCommitter(TaskAttemptContext context) throws IOException {
+    if (committer == null) {
+      if (getDestinationOverwrite(context))
+        committer = new EtlOverwritingMultiOutputCommitter(getOutputPath(context), context, log);
+      else
+        committer = new EtlMultiOutputCommitter(getOutputPath(context), context, log);
+    }
   }
 
   public static void setRecordWriterProviderClass(JobContext job, Class<RecordWriterProvider> recordWriterProviderClass) {
@@ -108,6 +116,14 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
 
   public static Path getDestinationPath(JobContext job) {
     return new Path(job.getConfiguration().get(ETL_DESTINATION_PATH));
+  }
+
+  public static void setDestinationOverwrite(JobContext job, boolean overwrite) {
+    job.getConfiguration().setBoolean(ETL_DESTINATION_OVERWRITE, overwrite);
+  }
+
+  public static boolean getDestinationOverwrite(JobContext job) {
+    return job.getConfiguration().getBoolean(ETL_DESTINATION_OVERWRITE, false);
   }
 
   public static void setDestPathTopicSubDir(JobContext job, String subPath) {
