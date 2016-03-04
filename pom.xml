@@ -8,7 +8,7 @@
 
   <groupId>com.linkedin.camus</groupId>
   <artifactId>camus-parent</artifactId>
-  <version>0.1.0-wmf7</version>
+  <version>0.1.0-wmf8-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Camus Parent</name>
   <description>
@@ -25,27 +25,27 @@
       <dependency>
         <groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-api</artifactId>
-	<version>0.1.0-wmf7</version>
+	<version>0.1.0-wmf8-SNAPSHOT</version>
       </dependency>
       <dependency>
 	<groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-etl-kafka</artifactId>
-	<version>0.1.0-wmf7</version>
+	<version>0.1.0-wmf8-SNAPSHOT</version>
       </dependency>
       <dependency>
 	<groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-kafka-coders</artifactId>
-	<version>0.1.0-wmf7</version>
+	<version>0.1.0-wmf8-SNAPSHOT</version>
       </dependency>
       <dependency>
 	<groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-schema-registry</artifactId>
-	<version>0.1.0-wmf7</version>
+	<version>0.1.0-wmf8-SNAPSHOT</version>
       </dependency>
       <dependency>
 	<groupId>com.linkedin.camus</groupId>
 	<artifactId>camus-schema-registry</artifactId>
-	<version>0.1.0-wmf7</version>
+	<version>0.1.0-wmf8-SNAPSHOT</version>
 	<type>test-jar</type>
 	<scope>test</scope>
       </dependency>
@@ -180,7 +180,7 @@
     <url>scm:git:https://gerrit.wikimedia.org/r/p/analytics/camus</url>
     <connection>scm:git:https://gerrit.wikimedia.org/r/p/analytics/camus</connection>
     <developerConnection>scm:git:ssh://${user.name}@gerrit.wikimedia.org:29418/analytics/camus</developerConnection>
-    <tag>v0.1.0-wmf7</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <distributionManagement>
