@@ -127,6 +127,10 @@ public class KafkaReader {
       return new KafkaMessage(payload, key, kafkaRequest.getTopic(), kafkaRequest.getPartition(),
           msgAndOffset.offset(), message.checksum());
     } else {
+      log.debug(
+          "KafkaReader has no more messages to read for " + kafkaRequest.getTopic() + ":" +
+          kafkaRequest.getPartition() + ". currentOffset: " + currentOffset + ", lastOffset: " + lastOffset
+      );
       return null;
     }
   }
@@ -150,11 +154,15 @@ public class KafkaReader {
 
   public boolean fetch() throws IOException {
     if (currentOffset >= lastOffset) {
+      log.debug(
+          "KafkaReader.fetch() for " + kafkaRequest.getTopic() + ":" + kafkaRequest.getPartition() +
+          " currentOffset: " + currentOffset + " >= lastOffset: " + lastOffset + ". No more fetches"
+      );
       return false;
     }
     long tempTime = System.currentTimeMillis();
+
     TopicAndPartition topicAndPartition = new TopicAndPartition(kafkaRequest.getTopic(), kafkaRequest.getPartition());
-    log.debug("\nAsking for offset : " + (currentOffset));
     PartitionFetchInfo partitionFetchInfo = new PartitionFetchInfo(currentOffset, fetchBufferSize);
 
     HashMap<TopicAndPartition, PartitionFetchInfo> fetchInfo = new HashMap<TopicAndPartition, PartitionFetchInfo>();
@@ -226,28 +234,47 @@ public class KafkaReader {
       ByteBufferMessageSet messageBuffer =
           fetchResponse.messageSet(kafkaRequest.getTopic(), kafkaRequest.getPartition());
       lastFetchTime = (System.currentTimeMillis() - tempTime);
-      log.debug("Time taken to fetch : " + (lastFetchTime / 1000) + " seconds");
+      log.debug(
+          "Time taken to fetch " + kafkaRequest.getTopic() + ":" + kafkaRequest.getPartition() +
+          " starting at offset " + kafkaRequest.getOffset() + ": " + (lastFetchTime / 1000) + " seconds");
       log.debug("The size of the ByteBufferMessageSet returned is : " + messageBuffer.sizeInBytes());
+
       int skipped = 0;
       totalFetchTime += lastFetchTime;
       messageIter = messageBuffer.iterator();
+
       //boolean flag = false;
       Iterator<MessageAndOffset> messageIter2 = messageBuffer.iterator();
+
       MessageAndOffset message = null;
       while (messageIter2.hasNext()) {
         message = messageIter2.next();
         if (message.offset() < currentOffset) {
+          log.warn(
+              "Kafka fetch response for " + kafkaRequest.getTopic() + ":" +
+              kafkaRequest.getPartition() + " at message offset " + message.offset() +
+              " is greater than current offset " + currentOffset + ", skipping message."
+          );
           //flag = true;
           skipped++;
         } else {
-          log.debug("Skipped offsets till : " + message.offset());
+          log.debug(
+              "Skipped offsets for " + kafkaRequest.getTopic() + ":" +
+              kafkaRequest.getPartition() + " until offset : " + message.offset()
+          );
           break;
         }
       }
-      log.debug("Number of offsets to be skipped: " + skipped);
+      log.debug(
+          "Number of offsets to be skipped for " + kafkaRequest.getTopic() + ":" +
+          kafkaRequest.getPartition() + ": " + skipped
+      );
       while (skipped != 0) {
         MessageAndOffset skippedMessage = messageIter.next();
-        log.debug("Skipping offset : " + skippedMessage.offset());
+        log.debug(
+            "Skipping " + kafkaRequest.getTopic() + ":" +
+            kafkaRequest.getPartition() + " offset : " + skippedMessage.offset()
+        );
         skipped--;
       }
 
