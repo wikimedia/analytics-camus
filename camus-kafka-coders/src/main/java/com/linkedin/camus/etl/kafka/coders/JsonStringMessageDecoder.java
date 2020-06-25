@@ -31,6 +31,10 @@ import java.util.Properties;
  * timestamp units are seconds) or 'unix_milliseconds' (if your timestamp units
  * are milliseconds).
  * <p/>
+ * This Decoder accepts a comma delimited list of possible timestamp fields in
+ * camus.message.timestamp.field.  For each record, the first existent value
+ * of one of these fields will be used as the camus timestamp for partitioning.
+ * <p/>
  * This MessageDecoder returns a CamusWrapper that works with Strings payloads,
  * since JSON data is always a String.
  */
@@ -49,7 +53,8 @@ public class JsonStringMessageDecoder extends MessageDecoder<Message, String> {
   DateTimeFormatter dateTimeParser = ISODateTimeFormat.dateTimeParser();
 
   private String timestampFormat;
-  private String timestampField;
+  private String timestampFieldProperty;
+  private String[] timestampFields;
 
   @Override
   public void init(Properties props, String topicName) {
@@ -57,7 +62,10 @@ public class JsonStringMessageDecoder extends MessageDecoder<Message, String> {
     this.topicName = topicName;
 
     timestampFormat = props.getProperty(CAMUS_MESSAGE_TIMESTAMP_FORMAT, DEFAULT_TIMESTAMP_FORMAT);
-    timestampField = props.getProperty(CAMUS_MESSAGE_TIMESTAMP_FIELD, DEFAULT_TIMESTAMP_FIELD);
+
+    // Kept only for logging purposes, the code uses timestampFields.
+    timestampFieldProperty = props.getProperty(CAMUS_MESSAGE_TIMESTAMP_FIELD, DEFAULT_TIMESTAMP_FIELD);
+    timestampFields = timestampFieldProperty.split(",");
   }
 
   @Override
@@ -82,7 +90,7 @@ public class JsonStringMessageDecoder extends MessageDecoder<Message, String> {
     }
 
     // Find the timestampField value in the jsonObject
-    JsonPrimitive timestampPrimitive = extractJsonPrimitive(jsonObject, timestampField);
+    JsonPrimitive timestampPrimitive = extractFirstJsonPrimitive(jsonObject, timestampFields);
 
     // Attempt to read and parse the timestamp element into a long.
     if (timestampPrimitive != null) {
@@ -128,8 +136,8 @@ public class JsonStringMessageDecoder extends MessageDecoder<Message, String> {
     // If timestamp wasn't set in the above block,
     // then set it to current time.
     if (timestamp == 0) {
-      log.warn("Couldn't find or parse timestamp field '" + timestampField
-          + "' in JSON message, defaulting to current time.");
+      log.warn("Couldn't find or parse any timestamp fields '" + timestampFieldProperty
+        + "' in JSON message, defaulting to current time.");
       timestamp = System.currentTimeMillis();
     }
 
@@ -146,14 +154,39 @@ public class JsonStringMessageDecoder extends MessageDecoder<Message, String> {
    *   extractJsonPrimitive(jsonObject, "obj.k2") -> JsonPrimitive(2)
    */
   private static JsonPrimitive extractJsonPrimitive(JsonObject jsonObject, String jsonPath) {
-      // if the path has dots, assume the first element in the path is
-      // in jsonObject, and the following elements are in subobjects.
-      if (jsonPath.contains(".")) {
-        String[] paths = jsonPath.split("\\.", 2);
+    // if the path has dots, assume the first element in the path is
+    // in jsonObject, and the following elements are in subobjects.
+    String[] paths = jsonPath.split("\\.", 2);
+    if (jsonObject.has(paths[0])) {
+      if (paths.length > 1) {
+        // Recurse into the top level object to get the sub paths
         return extractJsonPrimitive(jsonObject.getAsJsonObject(paths[0]), paths[1]);
       }
       else {
-        return jsonObject.getAsJsonPrimitive(jsonPath);
+        return jsonObject.getAsJsonPrimitive(paths[0]);
       }
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Looks for values for each of the jsonPaths and returns the first non null result.
+   * If no result it found, this returns null.
+   * @param jsonObject
+   * @param jsonPaths
+   * @return
+   */
+  private static JsonPrimitive extractFirstJsonPrimitive(JsonObject jsonObject, String[] jsonPaths) {
+    JsonPrimitive result = null;
+
+    for (String jsonPath : jsonPaths) {
+      result = extractJsonPrimitive(jsonObject, jsonPath);
+      if (result != null) {
+        break;
+      }
+    }
+
+    return result;
   }
 }

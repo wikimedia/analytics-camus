@@ -141,4 +141,35 @@ public class TestJsonStringMessageDecoder {
     assertEquals(expectedTimestamp, actualTimestamp);
   }
 
+  @Test
+  public void testDecodeWithMultiplePossibleTimestampFields() {
+    String testFormat = "yyyy-MM-dd HH:mm:ss Z";
+    String testTimestampFields = "obj.ts,ts";
+
+    Properties testProperties = new Properties();
+    testProperties.setProperty("camus.message.timestamp.format", testFormat);
+    testProperties.setProperty("camus.message.timestamp.field", testTimestampFields);
+    JsonStringMessageDecoder testDecoder = new JsonStringMessageDecoder();
+    testDecoder.init(testProperties, "testTopic");
+
+
+    // obj.ts should be used as timestamp
+    String testTimestamp1 = "2014-02-01 01:15:27 UTC";
+    long expectedTimestamp1 = 1391217327000L;
+    String payload1 = "{\"obj\": {\"ts\": \"" + testTimestamp1 + "\"}, \"myData\": \"myValue\"}";
+    byte[] bytePayload1 = payload1.getBytes();
+    CamusWrapper actualResult1 = testDecoder.decode(new TestMessage().setPayload(bytePayload1));
+    long actualTimestamp1 = actualResult1.getTimestamp();
+    assertEquals(expectedTimestamp1, actualTimestamp1);
+
+    // ts should be used as timestamp
+    String testTimestamp2 = "2020-02-01 01:15:27 UTC";
+    long expectedTimestamp2 = 1580519727000L;
+    String payload2 = "{\"ts\": \"" + testTimestamp2 + "\", \"myData\": \"myValue\"}";
+    byte[] bytePayload2 = payload2.getBytes();
+    CamusWrapper actualResult2 = testDecoder.decode(new TestMessage().setPayload(bytePayload2));
+    long actualTimestamp2 = actualResult2.getTimestamp();
+    assertEquals(expectedTimestamp2, actualTimestamp2);
+  }
+
 }
