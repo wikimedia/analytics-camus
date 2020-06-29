@@ -4,12 +4,12 @@
   <parent>
     <groupId>com.linkedin.camus</groupId>
     <artifactId>camus-parent</artifactId>
-    <version>0.1.0-wmf10-SNAPSHOT</version>
+    <version>0.1.0-wmf10</version>
   </parent>
 
   <groupId>org.wikimedia.analytics</groupId>
   <artifactId>camus-wmf</artifactId>
-  <version>0.1.0-wmf10-SNAPSHOT</version>
+  <version>0.1.0-wmf10</version>
   <name>Camus Wikimedia</name>
   <description>
     This subproject exists to build a shaded jar
@@ -23,7 +23,7 @@
     <dependency>
       <groupId>com.linkedin.camus</groupId>
       <artifactId>camus-etl-kafka</artifactId>
-      <version>0.1.0-wmf10-SNAPSHOT</version>
+      <version>0.1.0-wmf10</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
