@@ -35,7 +35,31 @@ the 'wmf' branch which is used for building Camus for Wikimedia is
 only present in Gerrit and its replicated Github repository at
 https://github.com/wikimedia/analytics-camus.
 
-## Deploying the wmf branch to archiva at WMF
+
+### EventStreamConfig
+Camus has been modified to look up a dynamic topic list using wikimedia-event-utilities
+EventStreamConfig. To enable this behavior, make sure `kafka.whitelist.topics` is unset, and set
+the following:
+
+```
+# Set this to wherever your stream config lives.
+eventstreamconfig.uri=https://meta.wikimedia.org/w/api.php
+# Optional, only set this is if you want to restrict the topics to consume to these streams
+eventstreamconfig.stream_names=streamA,streamB 
+# Optional, set this to use stream config settings to filter the streams for which to get
+# the topics or.
+eventstreamconfig.settings_filters=destination_event_service:eventgate-main,other_setting:yes
+```
+
+NOTE: if you are running Camus in Hadoop and need to use an HTTP proxy to access this URI,
+setting the http(s).proxyHost and http(s).proxyPort Java system properties is not
+enough. You should set the HADOOP_OPTS environment variable with these, e.g.
+
+```
+export HADOOP_OPTS="-Dhttp.proxyHost=webproxy.eqiad.wmnet -Dhttp.proxyPort=8080 -Dhttps.proxyHost=webproxy.eqiad.wmnet -Dhttps.proxyPort=8080"
+```
+
+### Deploying the wmf branch to archiva at WMF
 Maven release plugin is configured to work with archiva.wikimedia.org.  First make sure
 your ~/.m2/settings.xml file is configured to authenticate you with archiva:
 https://wikitech.wikimedia.org/wiki/Archiva#Deploy_to_Archiva

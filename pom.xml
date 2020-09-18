@@ -154,6 +154,12 @@
         <artifactId>dumbster</artifactId>
         <version>1.6</version>
       </dependency>
+
+      <dependency>
+          <groupId>org.wikimedia</groupId>
+          <artifactId>eventutilities</artifactId>
+          <version>1.0.2</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -202,21 +208,43 @@
   </issueManagement>
 
   <repositories>
-    <repository>
-      <id>central</id>
-      <url>http://repo1.maven.org/maven2</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
+      <!-- Remove maven central to use archiva-mirrored repos only -->
+      <repository>
+          <id>central</id>
+          <url>https://repo1.maven.org/maven2</url>
+          <releases>
+              <enabled>false</enabled>
+          </releases>
+          <snapshots>
+              <enabled>false</enabled>
+          </snapshots>
+      </repository>
 
-    <repository>
-      <id>wikimedia.mirrored</id>
-      <url>http://archiva.wikimedia.org/repository/mirrored/</url>
-    </repository>
+      <!-- Needed archiva-mirrored repos -->
+      <repository>
+          <id>wmf-mirror-maven-central</id>
+          <url>https://archiva.wikimedia.org/repository/mirror-maven-central/</url>
+      </repository>
+      <repository>
+          <id>wmf-mirror-spark</id>
+          <url>https://archiva.wikimedia.org/repository/mirror-spark/</url>
+      </repository>
+      <repository>
+          <id>wmf-mirror-cloudera</id>
+          <url>https://archiva.wikimedia.org/repository/mirror-cloudera/</url>
+      </repository>
+
+      <!-- Manually uploaded artifacts for analytics -->
+      <repository>
+          <id>wmf-analytics-old-uploads</id>
+          <url>https://archiva.wikimedia.org/repository/analytics-old-uploads/</url>
+      </repository>
+
+      <!-- WMF released artifacts -->
+      <repository>
+          <id>wmf-releases</id>
+          <url>https://archiva.wikimedia.org/repository/releases/</url>
+      </repository>
   </repositories>
 
   <build>
@@ -268,8 +296,8 @@
 	<artifactId>maven-compiler-plugin</artifactId>
 	<version>3.1</version>
 	<configuration>
-	  <source>1.6</source>
-	  <target>1.6</target>
+	  <source>8</source>
+	  <target>8</target>
 	  <encoding>UTF-8</encoding>
 	  <compilerArgs>
 	    <arg>-J-Djava.awt.headless=true</arg>

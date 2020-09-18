@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import kafka.api.PartitionOffsetRequestInfo;
 import kafka.common.ErrorMapping;
@@ -55,6 +56,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.log4j.Logger;
 
+import org.wikimedia.eventutilities.core.event.EventStreamConfig;
 
 /**
  * Input format for a Kafka pull job.
@@ -63,6 +65,28 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
   public static final String KAFKA_BLACKLIST_TOPIC = "kafka.blacklist.topics";
   public static final String KAFKA_WHITELIST_TOPIC = "kafka.whitelist.topics";
+
+  /**
+   * WMF MODIFICATION
+   * If set, uses org.wikimedia.eventutilities.core.EventStreamConfig to look up
+   * kafka.whitelist.topics from this uri.
+   * NOTE: if you are running Camus in Hadoop and need to use an HTTP proxy to access this URI,
+   * just setting the http(s).proxyHost and http(s).proxyPort system properties is not
+   * enough. You should set the HADOOP_OPTS environment variable with these, e.g.
+   *   export HADOOP_OPTS="-Dhttp.proxyHost=webproxy.eqiad.wmnet -Dhttp.proxyPort=8080 -Dhttps.proxyHost=webproxy.eqiad.wmnet -Dhttps.proxyPort=8080"
+   */
+  public static final String EVENT_STREAM_CONFIG_URI = "eventstreamconfig.uri";
+  /**
+   * WMF MODIFICATION
+   * Comma separated list of stream names or regexes to get topics for.
+   */
+  public static final String EVENT_STREAM_CONFIG_STREAM_NAMES = "eventstreamconfig.stream_names";
+  /**
+   * WMF MODIFICATION
+   * Comma separated list of k:v setting pairs to filter streams for which to get topics for.  E.g.
+   *    "canary_events_enabled:true,destination_event_service:eventgate-main"
+   */
+  public static final String EVENT_STREAM_CONFIG_SETTINGS_FILTERS = "eventstreamconfig.settings_filters";
 
   public static final String KAFKA_MOVE_TO_LAST_OFFSET_LIST = "kafka.move.to.last.offset.list";
   public static final String KAFKA_MOVE_TO_EARLIEST_OFFSET = "kafka.move.to.earliest.offset";
@@ -667,13 +691,126 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
     return getKafkaWhitelistTopic(job.getConfiguration());
   }
 
+  /**
+   * WMF MODIFICATION
+   *
+   * This function has been changed to call getKafkaWhitelistTopic(props)
+   * in order to allow using this without a Hadoop Configuration context.
+   */
   public static String[] getKafkaWhitelistTopic(Configuration conf) {
-    final String whitelistStr = conf.get(KAFKA_WHITELIST_TOPIC);
-    if (whitelistStr != null && !whitelistStr.isEmpty()) {
-      return conf.getStrings(KAFKA_WHITELIST_TOPIC);
-    } else {
-      return new String[] {};
-    }
+      // Create a new Properties using the props we need from conf.
+      // We could just use conf.getProps(), but that method is protected :/
+      Properties props = new Properties();
+      for (String propName : Arrays.asList(
+          KAFKA_WHITELIST_TOPIC,
+          EVENT_STREAM_CONFIG_URI,
+          EVENT_STREAM_CONFIG_STREAM_NAMES,
+          EVENT_STREAM_CONFIG_SETTINGS_FILTERS
+      )) {
+          String propValue = conf.get(propName);
+          if (propValue != null) {
+              props.setProperty(propName, propValue);
+          }
+      }
+      return getKafkaWhitelistTopic(props);
+  }
+
+  /**
+   * WMF MODIFICATION
+   *
+   * Gets KAFKA_WHITELIST_TOPIC from props.
+   * If KAFKA_WHITELIST_TOPIC is not set, but EVENT_STREAM_CONFIG_URI is set,
+   * wikimedia-event-utilities EventStreamConfig will be used to look up
+   * topics for EVENT_STREAM_CONFIG_STREAM_NAMES and EVENT_STREAM_CONFIG_SETTINGS_FILTERS.
+   * This allows for dynamic remote configuration of topics that should be ingested by Camus.
+   */
+  public static String[] getKafkaWhitelistTopic(Properties props) {
+
+      final String[] topicWhitelist = getStrings(props, KAFKA_WHITELIST_TOPIC);
+      final String eventStreamConfigUri = props.getProperty(EVENT_STREAM_CONFIG_URI);
+
+      // If KAFKA_WHITELIST_TOPIC is set and non empty, use it
+      if (topicWhitelist != null) {
+          return topicWhitelist;
+      } else if (eventStreamConfigUri != null) {
+          // Else if EVENT_STREAM_CONFIG_URI, build an EventStreamConfig instance
+          // and use it to discover dynamic topics.
+          String[] streamNames = getStrings(props, EVENT_STREAM_CONFIG_STREAM_NAMES);
+          if (streamNames == null) {
+            streamNames = new String[0];
+          }
+
+          String[] settingsFilters = getStrings(props, EVENT_STREAM_CONFIG_SETTINGS_FILTERS);
+          if (settingsFilters == null) {
+            settingsFilters = new String[0];
+          }
+
+          String logMessage = "Getting " + KAFKA_WHITELIST_TOPIC + " from EventStreamConfig at " +
+              eventStreamConfigUri;
+          if (streamNames.length > 0) {
+              logMessage += " for streams " + String.join(",", streamNames);
+          }
+          if (settingsFilters.length > 0) {
+              logMessage += " with settings " + String.join(",", settingsFilters);
+          }
+          logMessage += ".";
+          log.info(logMessage);
+
+          // Convert settingsFilters into a Map.
+          Map<String, String> settingsFiltersMap = Arrays.stream(settingsFilters)
+              .map(s -> s.split(":"))
+              .collect(Collectors.toMap(kv -> kv[0], kv -> kv[1]));
+
+          // Get an EventStreamConfig instance using eventStreamConfigUri.
+          EventStreamConfig eventStreamConfig = EventStreamConfig.builder()
+              .setEventStreamConfigLoader(eventStreamConfigUri)
+              .build();
+
+          // Get the list of topics matching the target streamNames and settingsFilters.
+          List<String> topics = eventStreamConfig.collectTopicsMatchingSettings(
+              Arrays.asList(streamNames), settingsFiltersMap
+          );
+
+          if (topics.isEmpty()) {
+              log.error(
+                  "No topics matching the provided stream names and settings could be found using " +
+                  eventStreamConfig + ". Aborting."
+              );
+              throw new RuntimeException(
+                  "Failed to obtain topics to consume from EventStreamConfig at " +
+                  eventStreamConfigUri
+              );
+          }
+
+          log.info(
+              "Will use the following from EventStreamConfig for " + KAFKA_WHITELIST_TOPIC + ": " +
+              String.join(",", topics)
+          );
+
+          // Convert the list of topics into a Regex;
+          // Camus expects to have an array of strings, but we'll be giving
+          // it a single element array with one long topic regex.
+          return new String[] { EventStreamConfig.toRegex(topics) };
+        } else {
+            // Else, camus expects an empty list as default.
+            return new String[] { };
+        }
+  }
+
+  /**
+   * Convenience method to convert a comma separated property value into an array of strings.
+   * Hadoop Configuration has this, but java.util.Properties doesn't.
+   * @param props
+   * @param key
+   * @return
+   */
+  private static String[] getStrings(Properties props, String key) {
+      String value = props.getProperty(key);
+      if (value != null) {
+        return value.split(",");
+      } else {
+        return null;
+      }
   }
 
   public static void setEtlIgnoreSchemaErrors(JobContext job, boolean val) {
