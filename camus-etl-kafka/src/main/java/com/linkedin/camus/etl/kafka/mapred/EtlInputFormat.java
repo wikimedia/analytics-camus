@@ -807,9 +807,12 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
   private static String[] getStrings(Properties props, String key) {
       String value = props.getProperty(key);
       if (value != null) {
-        return value.split(",");
+          // Split on comma and remove any empty strings.
+          return Arrays.stream(value.split(","))
+              .filter(s -> !s.isEmpty())
+              .toArray(String[]::new);
       } else {
-        return null;
+          return null;
       }
   }
 
