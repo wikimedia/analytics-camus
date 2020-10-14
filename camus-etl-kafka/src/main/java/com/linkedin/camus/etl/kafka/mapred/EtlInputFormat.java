@@ -79,6 +79,8 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
   /**
    * WMF MODIFICATION
    * Comma separated list of stream names or regexes to get topics for.
+   * If this is not set, stream names will not be used for topic discovery, only
+   * settings_filters will be applied.
    */
   public static final String EVENT_STREAM_CONFIG_STREAM_NAMES = "eventstreamconfig.stream_names";
   /**
@@ -736,9 +738,6 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
           // Else if EVENT_STREAM_CONFIG_URI, build an EventStreamConfig instance
           // and use it to discover dynamic topics.
           String[] streamNames = getStrings(props, EVENT_STREAM_CONFIG_STREAM_NAMES);
-          if (streamNames == null) {
-            streamNames = new String[0];
-          }
 
           String[] settingsFilters = getStrings(props, EVENT_STREAM_CONFIG_SETTINGS_FILTERS);
           if (settingsFilters == null) {
@@ -747,18 +746,29 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
           String logMessage = "Getting " + KAFKA_WHITELIST_TOPIC + " from EventStreamConfig at " +
               eventStreamConfigUri;
-          if (streamNames.length > 0) {
+          if (streamNames != null) {
               logMessage += " for streams " + String.join(",", streamNames);
           }
           if (settingsFilters.length > 0) {
               logMessage += " with settings " + String.join(",", settingsFilters);
           }
           logMessage += ".";
-          log.info(logMessage);
+          if (log != null) {
+              log.info(logMessage);
+          }
 
           // Convert settingsFilters into a Map.
           Map<String, String> settingsFiltersMap = Arrays.stream(settingsFilters)
-              .map(s -> s.split(":"))
+              .map(s -> {
+                  String[] kv = s.split(":");
+                  if (kv.length != 2) {
+                      throw new RuntimeException(
+                          "Failed parsing " + EVENT_STREAM_CONFIG_SETTINGS_FILTERS +
+                          " into a Map. One of the key:value pairs is improperly formatted: " + s
+                      );
+                  }
+                  return kv;
+              })
               .collect(Collectors.toMap(kv -> kv[0], kv -> kv[1]));
 
           // Get an EventStreamConfig instance using eventStreamConfigUri.
@@ -767,30 +777,35 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
               .build();
 
           // Get the list of topics matching the target streamNames and settingsFilters.
+          // If streamNames is null, streams will only be selected by settingsFilters.
           List<String> topics = eventStreamConfig.collectTopicsMatchingSettings(
-              Arrays.asList(streamNames), settingsFiltersMap
+              streamNames == null ? null : Arrays.asList(streamNames), settingsFiltersMap
           );
 
           if (topics.isEmpty()) {
-              log.error(
-                  "No topics matching the provided stream names and settings could be found using " +
-                  eventStreamConfig + ". Aborting."
-              );
-              throw new RuntimeException(
-                  "Failed to obtain topics to consume from EventStreamConfig at " +
-                  eventStreamConfigUri
-              );
+              // Camus expects an empty kafka.whitelist.topics to indicate that it should import
+              // ALL topics from Kafka.  This might be fine for the usual case, but WMF never wants
+              // to do this, and I want to protect against accidentally doing this if EventStreamConfig
+              // topics can't be found.  Instead of returning an empty Array here (as Camus expects),
+              // we throw an InvalidParameterException.
+              String warnMessage = "No topics matching the provided stream names and settings could be using " + eventStreamConfig;
+              if (log != null) {
+                  log.error(warnMessage);
+              }
+              throw new InvalidParameterException(warnMessage);
+          } else {
+              if (log != null) {
+                  log.info(
+                      "Found the following topics from EventStreamConfig for " + KAFKA_WHITELIST_TOPIC + ": " +
+                      String.join(",", topics)
+                  );
+              }
+              // Convert the list of topics into a Regex;
+              // Camus expects to have an array of strings, but we'll be giving
+              // it a single element array with one long topic regex.
+              return new String[] { EventStreamConfig.toRegex(topics) };
           }
 
-          log.info(
-              "Will use the following from EventStreamConfig for " + KAFKA_WHITELIST_TOPIC + ": " +
-              String.join(",", topics)
-          );
-
-          // Convert the list of topics into a Regex;
-          // Camus expects to have an array of strings, but we'll be giving
-          // it a single element array with one long topic regex.
-          return new String[] { EventStreamConfig.toRegex(topics) };
         } else {
             // Else, camus expects an empty list as default.
             return new String[] { };

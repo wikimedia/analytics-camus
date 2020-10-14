@@ -244,7 +244,7 @@ public class EtlKey implements WritableComparable<EtlKey>, IEtlKey {
     builder.append(topic);
     builder.append(" partition=");
     builder.append(partition);
-    builder.append("leaderId=");
+    builder.append(" leaderId=");
     builder.append(leaderId);
     builder.append(" server=");
     builder.append(server);
